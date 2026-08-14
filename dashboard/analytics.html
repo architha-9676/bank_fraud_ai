@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI - Analytics</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛡️ FraudGuard AI <span class="live-badge">● LIVE</span></h1>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">🏠 Home</a>
+        <a href="live.html" class="nav-btn">🔴 Live Monitor</a>
+        <a href="cases.html" class="nav-btn">📋 Cases</a>
+        <a href="test.html" class="nav-btn">🧪 Test</a>
+        <a href="analytics.html" class="nav-btn">📊 Analytics</a>
+        <a href="alerts.html" class="nav-btn">🚨 Alerts <span class="badge-count" id="alertBadge">0</span></a>
+        <a href="performance.html" class="nav-btn">🤖 Model</a>
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="card">
+        <div class="card-title">
+            📊 Fraud Analytics Dashboard
+            <button class="btn btn-blue" onclick="loadAnalytics()">Refresh</button>
+        </div>
+        <p style="font-size:12px;color:#64748b">
+            Insights generated from all detected fraud cases across transaction types, locations and time patterns.
+        </p>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <div class="card-title">💳 Fraud by Transaction Type</div>
+            <canvas id="typeChart" height="200"></canvas>
+        </div>
+        <div class="card">
+            <div class="card-title">📍 Fraud by Location</div>
+            <canvas id="cityChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🕐 Fraud Pattern by Hour of Day</div>
+        <canvas id="hourChart" height="100"></canvas>
+    </div>
+
+    <div class="grid3">
+        <div class="card" style="text-align:center">
+            <div class="label" style="font-size:11px;color:#64748b;text-transform:uppercase">Total Amount Saved</div>
+            <div class="value green" style="font-size:32px;font-weight:bold;margin-top:10px" id="totalSaved">₹0</div>
+            <p style="font-size:11px;color:#64748b;margin-top:5px">From all blocked transactions</p>
+        </div>
+        <div class="card" style="text-align:center">
+            <div class="label" style="font-size:11px;color:#64748b;text-transform:uppercase">Most Risky Hour</div>
+            <div class="value orange" style="font-size:32px;font-weight:bold;margin-top:10px" id="riskyHour">--</div>
+            <p style="font-size:11px;color:#64748b;margin-top:5px">Peak fraud activity time</p>
+        </div>
+        <div class="card" style="text-align:center">
+            <div class="label" style="font-size:11px;color:#64748b;text-transform:uppercase">Most Risky Location</div>
+            <div class="value red" style="font-size:32px;font-weight:bold;margin-top:10px" id="riskyCity">--</div>
+            <p style="font-size:11px;color:#64748b;margin-top:5px">Highest fraud origin</p>
+        </div>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+<script>
+    let typeChartInst, cityChartInst, hourChartInst;
+
+    async function loadAnalytics() {
+        try {
+            const res = await fetch(`${API}/analytics`);
+            const data = await res.json();
+
+            // Total saved
+            document.getElementById('totalSaved').textContent =
+                '₹' + data.total_amount_saved.toLocaleString('en-IN', {maximumFractionDigits: 2});
+
+            // Most risky hour
+            let maxHour = '--', maxHourVal = 0;
+            for(const [hour, count] of Object.entries(data.by_hour)) {
+                if(count > maxHourVal) { maxHourVal = count; maxHour = hour + ':00'; }
+            }
+            document.getElementById('riskyHour').textContent = maxHourVal > 0 ? maxHour : '--';
+
+            // Most risky city
+            let maxCity = '--', maxCityVal = 0;
+            for(const [city, count] of Object.entries(data.by_city)) {
+                if(count > maxCityVal) { maxCityVal = count; maxCity = city; }
+            }
+            document.getElementById('riskyCity').textContent = maxCity;
+
+            // TYPE CHART
+            const typeLabels = Object.keys(data.by_type);
+            const typeValues = Object.values(data.by_type);
+
+            if(typeChartInst) typeChartInst.destroy();
+            typeChartInst = new Chart(document.getElementById('typeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: typeLabels.length ? typeLabels : ['No data'],
+                    datasets: [{
+                        data: typeValues.length ? typeValues : [1],
+                        backgroundColor: ['#f87171','#fb923c','#a78bfa','#38bdf8','#4ade80','#facc15','#f472b6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: {size: 11} } } }
+                }
+            });
+
+            // CITY CHART
+            const cityLabels = Object.keys(data.by_city);
+            const cityValues = Object.values(data.by_city);
+
+            if(cityChartInst) cityChartInst.destroy();
+            cityChartInst = new Chart(document.getElementById('cityChart'), {
+                type: 'bar',
+                data: {
+                    labels: cityLabels.length ? cityLabels : ['No data'],
+                    datasets: [{
+                        label: 'Fraud Cases',
+                        data: cityValues.length ? cityValues : [0],
+                        backgroundColor: '#f87171',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#64748b', font: {size: 10} }, grid: { display: false } },
+                        y: { ticks: { color: '#64748b', font: {size: 10} }, grid: { color: '#1e3a5f' } }
+                    }
+                }
+            });
+
+            // HOUR CHART
+            const hourLabels = Object.keys(data.by_hour).map(h => h + ':00');
+            const hourValues = Object.values(data.by_hour);
+
+            if(hourChartInst) hourChartInst.destroy();
+            hourChartInst = new Chart(document.getElementById('hourChart'), {
+                type: 'bar',
+                data: {
+                    labels: hourLabels,
+                    datasets: [{
+                        label: 'Fraud cases',
+                        data: hourValues,
+                        backgroundColor: hourValues.map((v, i) => (i >= 0 && i <= 5) ? '#dc2626' : '#1d4ed8'),
+                        borderRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#64748b', font: {size: 9} }, grid: { display: false } },
+                        y: { ticks: { color: '#64748b', font: {size: 10} }, grid: { color: '#1e3a5f' } }
+                    }
+                }
+            });
+
+        } catch(e) {
+            console.log('Analytics error:', e);
+        }
+    }
+
+    loadAnalytics();
+    setInterval(loadAnalytics, 15000);
+</script>
+
+</body>
+</html>

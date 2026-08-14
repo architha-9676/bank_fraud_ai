@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI - Alert Center</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛡️ FraudGuard AI <span class="live-badge">● LIVE</span></h1>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">🏠 Home</a>
+        <a href="live.html" class="nav-btn">🔴 Live Monitor</a>
+        <a href="cases.html" class="nav-btn">📋 Cases</a>
+        <a href="test.html" class="nav-btn">🧪 Test</a>
+        <a href="analytics.html" class="nav-btn">📊 Analytics</a>
+        <a href="alerts.html" class="nav-btn">🚨 Alerts <span class="badge-count" id="alertBadge">0</span></a>
+        <a href="performance.html" class="nav-btn">🤖 Model</a>
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="card">
+        <div class="card-title">
+            🚨 Critical Alert Center
+            <button class="btn btn-blue" onclick="loadAlerts()">Refresh</button>
+        </div>
+        <p style="font-size:12px;color:#64748b;margin-bottom:15px">
+            Real-time alerts for CRITICAL risk transactions (90%+ confidence). System automatically blocks these and notifies instantly.
+        </p>
+
+        <div id="alertsList">
+            <div class="loading-text">Loading alerts...</div>
+        </div>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+<script>
+    async function loadAlerts() {
+        const container = document.getElementById('alertsList');
+
+        try {
+            const res = await fetch(`${API}/alerts`);
+            const alerts = await res.json();
+
+            if(alerts.length === 0) {
+                container.innerHTML = '<div class="loading-text">✅ No critical alerts! System running smoothly.</div>';
+                return;
+            }
+
+            let html = '';
+            alerts.forEach(a => {
+                html += `
+                    <div class="alert-item fade-in">
+                        <div style="display:flex;justify-content:space-between;align-items:center">
+                            <span class="tag ${getDecisionTag(a.decision)}">${a.decision}</span>
+                            <span class="alert-time">🕐 ${a.time}</span>
+                        </div>
+                        <div class="alert-msg">🚨 ${a.message}</div>
+                        <div style="font-size:11px;color:#94a3b8">
+                            <b>Reason:</b> ${a.reason} | <b>Case:</b> ${a.case_id}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+
+        } catch(e) {
+            container.innerHTML = '<div class="loading-text">❌ API Error!</div>';
+        }
+    }
+
+    loadAlerts();
+    setInterval(loadAlerts, 10000);
+</script>
+
+</body>
+</html>

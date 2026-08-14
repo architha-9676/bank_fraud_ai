@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI - Model Performance</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛡️ FraudGuard AI <span class="live-badge">● LIVE</span></h1>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">🏠 Home</a>
+        <a href="live.html" class="nav-btn">🔴 Live Monitor</a>
+        <a href="cases.html" class="nav-btn">📋 Cases</a>
+        <a href="test.html" class="nav-btn">🧪 Test</a>
+        <a href="analytics.html" class="nav-btn">📊 Analytics</a>
+        <a href="alerts.html" class="nav-btn">🚨 Alerts <span class="badge-count" id="alertBadge">0</span></a>
+        <a href="performance.html" class="nav-btn">🤖 Model</a>
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="card">
+        <div class="card-title">🤖 ML Model Performance Comparison</div>
+        <p style="font-size:12px;color:#64748b">
+            We trained and compared 4 machine learning models on 284,807 real credit card transactions.
+            XGBoost was selected as the production model.
+        </p>
+    </div>
+
+    <div class="grid2">
+        <div class="card">
+            <div class="card-title">📊 Model Comparison Table</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Accuracy</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1 Score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="modelTable">
+                    <tr><td colspan="6" class="loading-text">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📈 F1 Score Comparison</div>
+            <canvas id="modelChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="grid3">
+        <div class="card" style="text-align:center">
+            <div class="label" style="font-size:11px;color:#64748b;text-transform:uppercase">Dataset Size</div>
+            <div class="value blue" style="font-size:28px;font-weight:bold;margin-top:10px" id="datasetSize">--</div>
+            <p style="font-size:11px;color:#64748b;margin-top:5px">Real transactions analyzed</p>
+        </div>
+        <div class="card" style="text-align:center">
+            <div class="label" style="font-size:11px;color:#64748b;text-transform:uppercase">Fraud Cases in Training</div>
+            <div class="value red" style="font-size:28px;font-weight:bold;margin-top:10px" id="fraudCases">--</div>
+            <p style="font-size:11px;color:#64748b;margin-top:5px">0.17% of total dataset</p>
+        </div>
+        <div class="card" style="text-align:center">
+            <div class="label" style="font-size:11px;color:#64748b;text-transform:uppercase">Active Model</div>
+            <div class="value green" style="font-size:28px;font-weight:bold;margin-top:10px">XGBoost</div>
+            <p style="font-size:11px;color:#64748b;margin-top:5px" id="trainingDate">--</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📖 Model Selection Process</div>
+        <table>
+            <tr>
+                <td style="width:50px">1️⃣</td>
+                <td><b>Data Preparation</b> — Loaded 284,807 transactions, applied feature scaling using StandardScaler</td>
+            </tr>
+            <tr>
+                <td>2️⃣</td>
+                <td><b>Train-Test Split</b> — 80% training data (227,845 rows), 20% testing data (56,962 rows)</td>
+            </tr>
+            <tr>
+                <td>3️⃣</td>
+                <td><b>Model Training</b> — Trained Random Forest, Logistic Regression, Decision Tree and XGBoost</td>
+            </tr>
+            <tr>
+                <td>4️⃣</td>
+                <td><b>Evaluation</b> — Compared using Accuracy, Precision, Recall and F1 Score (F1 most important for imbalanced fraud data)</td>
+            </tr>
+            <tr>
+                <td>5️⃣</td>
+                <td><b>Threshold Tuning</b> — Lowered decision threshold from 0.5 to 0.3 to catch more fraud cases (improved F1 from 84.44% to 88.04%)</td>
+            </tr>
+            <tr>
+                <td>6️⃣</td>
+                <td><b>Final Selection</b> — XGBoost selected as production model with 99.96% accuracy and best F1 score</td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+<script>
+    let modelChartInst;
+
+    async function loadPerformance() {
+        try {
+            const res = await fetch(`${API}/performance`);
+            const data = await res.json();
+
+            document.getElementById('datasetSize').textContent = data.dataset_size.toLocaleString();
+            document.getElementById('fraudCases').textContent = data.fraud_cases;
+            document.getElementById('trainingDate').textContent = 'Trained: ' + data.training_date;
+
+            // Table
+            let html = '';
+            data.models.forEach(m => {
+                const statusColor = m.status === 'Active' ? '#4ade80' : (m.status === 'Standby' ? '#fb923c' : '#64748b');
+                html += `
+                    <tr>
+                        <td><b>${m.name}</b> ${m.status === 'Active' ? '🏆' : ''}</td>
+                        <td>${m.accuracy}%</td>
+                        <td>${m.precision}%</td>
+                        <td>${m.recall}%</td>
+                        <td>${m.f1}%</td>
+                        <td style="color:${statusColor}">${m.status}</td>
+                    </tr>
+                `;
+            });
+            document.getElementById('modelTable').innerHTML = html;
+
+            // Chart
+            const labels = data.models.map(m => m.name);
+            const f1Scores = data.models.map(m => m.f1);
+
+            if(modelChartInst) modelChartInst.destroy();
+            modelChartInst = new Chart(document.getElementById('modelChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'F1 Score %',
+                        data: f1Scores,
+                        backgroundColor: ['#4ade80','#38bdf8','#fb923c','#64748b'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#1e3a5f' }, max: 100 },
+                        y: { ticks: { color: '#94a3b8', font: {size: 11} }, grid: { display: false } }
+                    }
+                }
+            });
+
+        } catch(e) {
+            console.log('Performance error:', e);
+        }
+    }
+
+    loadPerformance();
+</script>
+
+</body>
+</html>

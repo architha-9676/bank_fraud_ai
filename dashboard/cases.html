@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI - Case Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛡️ FraudGuard AI <span class="live-badge">● LIVE</span></h1>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">🏠 Home</a>
+        <a href="live.html" class="nav-btn">🔴 Live Monitor</a>
+        <a href="cases.html" class="nav-btn">📋 Cases</a>
+        <a href="test.html" class="nav-btn">🧪 Test</a>
+        <a href="analytics.html" class="nav-btn">📊 Analytics</a>
+        <a href="alerts.html" class="nav-btn">🚨 Alerts <span class="badge-count" id="alertBadge">0</span></a>
+        <a href="performance.html" class="nav-btn">🤖 Model</a>
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="metrics">
+        <div class="metric">
+            <div class="label">Total Cases</div>
+            <div class="value blue" id="c-total">0</div>
+            <div class="change">All time</div>
+        </div>
+        <div class="metric">
+            <div class="label">Blocked</div>
+            <div class="value red" id="c-blocked">0</div>
+            <div class="change">Card disabled</div>
+        </div>
+        <div class="metric">
+            <div class="label">Flagged</div>
+            <div class="value orange" id="c-flagged">0</div>
+            <div class="change">Under watch</div>
+        </div>
+        <div class="metric">
+            <div class="label">Monitoring</div>
+            <div class="value purple" id="c-monitoring">0</div>
+            <div class="change">Tracking</div>
+        </div>
+        <div class="metric">
+            <div class="label">Approved</div>
+            <div class="value green" id="c-approved">0</div>
+            <div class="change">Cleared</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">
+            📋 Fraud Case Management
+            <button class="btn btn-blue" onclick="loadCases()">Refresh</button>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Case ID</th>
+                    <th>Type</th>
+                    <th>Customer</th>
+                    <th>Card</th>
+                    <th>Merchant</th>
+                    <th>Location</th>
+                    <th>Amount</th>
+                    <th>Confidence</th>
+                    <th>Risk</th>
+                    <th>Decision</th>
+                    <th>Reason</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody id="casesTable">
+                <tr><td colspan="12" class="loading-text">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+<script>
+    async function loadCases() {
+        const tbody = document.getElementById('casesTable');
+        try {
+            const res = await fetch('http://127.0.0.1:5000/cases');
+            const cases = await res.json();
+
+            document.getElementById('c-total').textContent = cases.length;
+            document.getElementById('c-blocked').textContent = cases.filter(c => c.decision === 'BLOCKED').length;
+            document.getElementById('c-flagged').textContent = cases.filter(c => c.decision === 'FLAGGED').length;
+            document.getElementById('c-monitoring').textContent = cases.filter(c => c.decision === 'MONITORING').length;
+            document.getElementById('c-approved').textContent = cases.filter(c => c.decision === 'APPROVED').length;
+
+            if(cases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="loading-text">No cases yet.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            cases.forEach(c => {
+                html += '<tr class="fade-in">';
+                html += '<td style="color:#38bdf8">' + c.case_id + '</td>';
+                html += '<td>' + getTxIcon(c.tx_type) + ' ' + c.tx_type + '</td>';
+                html += '<td>' + c.customer + '</td>';
+                html += '<td style="color:#64748b">' + c.card + '</td>';
+                html += '<td>' + c.merchant + '</td>';
+                html += '<td>' + c.city + '</td>';
+                html += '<td style="font-weight:bold">' + c.amount + '</td>';
+                html += '<td>' + c.confidence + '%</td>';
+                html += '<td><span class="tag ' + getRiskTag(c.risk) + '">' + c.risk + '</span></td>';
+                html += '<td><span class="tag ' + getDecisionTag(c.decision) + '">' + c.decision + '</span></td>';
+                html += '<td style="font-size:11px;color:#94a3b8">' + c.reason + '</td>';
+                html += '<td>' + c.created_at + '</td>';
+                html += '</tr>';
+            });
+            tbody.innerHTML = html;
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="12" class="loading-text">Error: ' + e.message + '</td></tr>';
+        }
+    }
+
+    loadCases();
+    setInterval(loadCases, 10000);
+</script>
+
+</body>
+</html>

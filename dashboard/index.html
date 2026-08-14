@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI - Home</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<div class="navbar">
+    <h1>🛡️ FraudGuard AI <span class="live-badge">● LIVE</span></h1>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">🏠 Home</a>
+        <a href="live.html" class="nav-btn">🔴 Live Monitor</a>
+        <a href="cases.html" class="nav-btn">📋 Cases</a>
+        <a href="test.html" class="nav-btn">🧪 Test</a>
+        <a href="analytics.html" class="nav-btn">📊 Analytics</a>
+        <a href="alerts.html" class="nav-btn">🚨 Alerts <span class="badge-count" id="alertBadge">0</span></a>
+        <a href="performance.html" class="nav-btn">🤖 Model</a>
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="welcome-box">
+        <h2>Welcome to FraudGuard AI 🛡️</h2>
+        <p>
+            An AI-powered real-time fraud detection system that monitors UPI, Credit Card,
+            Debit Card, Net Banking, Wallet and International transactions automatically.
+            Powered by XGBoost Machine Learning model with 99.96% accuracy.
+        </p>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <div class="icon">🤖</div>
+                <div class="title">AI Powered</div>
+                <div class="desc">XGBoost ML Model</div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">⚡</div>
+                <div class="title">Real Time</div>
+                <div class="desc">Auto refresh every 10s</div>
+            </div>
+            <div class="feature-item">
+                <div class="icon">🔒</div>
+                <div class="title">Auto Blocking</div>
+                <div class="desc">Critical fraud blocked instantly</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="metrics">
+        <div class="metric">
+            <div class="label">Total Transactions</div>
+            <div class="value blue" id="h-total">--</div>
+            <div class="change">Today</div>
+        </div>
+        <div class="metric">
+            <div class="label">Blocked</div>
+            <div class="value red" id="h-blocked">--</div>
+            <div class="change">🔒 Auto blocked</div>
+        </div>
+        <div class="metric">
+            <div class="label">Amount Saved</div>
+            <div class="value green" id="h-saved">--</div>
+            <div class="change">From fraud</div>
+        </div>
+        <div class="metric">
+            <div class="label">Model Accuracy</div>
+            <div class="value purple" id="h-accuracy">--</div>
+            <div class="change">XGBoost</div>
+        </div>
+        <div class="metric">
+            <div class="label">New Alerts</div>
+            <div class="value yellow" id="h-alerts">--</div>
+            <div class="change">🚨 Needs attention</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📖 How This System Works</div>
+        <table>
+            <tr>
+                <td style="width:50px">1️⃣</td>
+                <td><b>Transaction Occurs</b> — UPI, Credit Card, Debit Card, Net Banking, Wallet or International</td>
+            </tr>
+            <tr>
+                <td>2️⃣</td>
+                <td><b>ML Model Analyzes</b> — XGBoost model checks transaction pattern, amount, time and location</td>
+            </tr>
+            <tr>
+                <td>3️⃣</td>
+                <td><b>Risk Score Calculated</b> — Confidence score from 0-100% determines risk level</td>
+            </tr>
+            <tr>
+                <td>4️⃣</td>
+                <td><b>Automatic Decision</b> — BLOCKED (90%+), FLAGGED (70-90%), MONITORING (50-70%), APPROVED (below 50%)</td>
+            </tr>
+            <tr>
+                <td>5️⃣</td>
+                <td><b>Case Created</b> — Every suspicious transaction becomes a trackable case</td>
+            </tr>
+            <tr>
+                <td>6️⃣</td>
+                <td><b>Alert Sent</b> — Critical cases trigger instant alerts</td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+<script>
+    async function loadStats() {
+        try {
+            const res = await fetch(`${API}/stats`);
+            const data = await res.json();
+            document.getElementById('h-total').textContent = data.total_transactions.toLocaleString();
+            document.getElementById('h-blocked').textContent = data.blocked;
+            document.getElementById('h-saved').textContent = data.amount_saved;
+            document.getElementById('h-accuracy').textContent = data.accuracy + '%';
+            document.getElementById('h-alerts').textContent = data.new_alerts;
+        } catch(e) {
+            console.log('Stats error:', e);
+        }
+    }
+    loadStats();
+    setInterval(loadStats, 10000);
+</script>
+
+</body>
+</html>

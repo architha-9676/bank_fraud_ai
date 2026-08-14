@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FraudGuard AI - Live Monitor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<div class="navbar">
+    <h1>🛡️ FraudGuard AI <span class="live-badge">● LIVE</span></h1>
+    <div class="nav-links">
+        <a href="index.html" class="nav-btn">🏠 Home</a>
+        <a href="live.html" class="nav-btn">🔴 Live Monitor</a>
+        <a href="cases.html" class="nav-btn">📋 Cases</a>
+        <a href="test.html" class="nav-btn">🧪 Test</a>
+        <a href="analytics.html" class="nav-btn">📊 Analytics</a>
+        <a href="alerts.html" class="nav-btn">🚨 Alerts <span class="badge-count" id="alertBadge">0</span></a>
+        <a href="performance.html" class="nav-btn">🤖 Model</a>
+    </div>
+</div>
+
+<div class="main">
+
+    <div class="card">
+        <div class="card-title">
+            🔴 Live Transaction Feed — All Types
+            <button class="btn btn-blue" onclick="loadLive()">🔄 Refresh Now</button>
+        </div>
+        <p style="font-size:12px;color:#64748b;margin-bottom:15px">
+            Monitoring UPI, Credit Card, Debit Card, Net Banking, Wallet & International transactions in real time.
+            Auto refreshes every 10 seconds.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Transaction ID</th>
+                    <th>Customer</th>
+                    <th>Card</th>
+                    <th>Merchant</th>
+                    <th>Location</th>
+                    <th>Amount</th>
+                    <th>Time</th>
+                    <th>Confidence</th>
+                    <th>Risk</th>
+                    <th>System Decision</th>
+                </tr>
+            </thead>
+            <tbody id="liveTable">
+                <tr><td colspan="11" class="loading-text">Loading live transactions...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script src="script.js"></script>
+<script>
+    async function loadLive() {
+        const tbody = document.getElementById('liveTable');
+        tbody.innerHTML = '<tr><td colspan="11" class="loading-text">Loading...</td></tr>';
+
+        try {
+            const res = await fetch(`${API}/live`);
+            const transactions = await res.json();
+
+            tbody.innerHTML = '';
+            transactions.forEach(tx => {
+                tbody.innerHTML += `
+                    <tr class="fade-in">
+                        <td>${getTxIcon(tx.tx_type)} ${tx.tx_type}</td>
+                        <td style="color:#38bdf8">${tx.id}</td>
+                        <td>${tx.name}</td>
+                        <td style="color:#64748b">${tx.card}</td>
+                        <td>${tx.merchant}</td>
+                        <td>${tx.city}</td>
+                        <td style="font-weight:bold">${tx.amount}</td>
+                        <td>${tx.time}</td>
+                        <td>${tx.confidence}%</td>
+                        <td><span class="tag ${getRiskTag(tx.risk)}">${tx.risk}</span></td>
+                        <td><span class="tag ${getDecisionTag(tx.decision)}">${tx.decision}</span></td>
+                    </tr>
+                `;
+            });
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="11" class="loading-text">❌ API Error — Make sure Flask is running!</td></tr>';
+        }
+    }
+
+    loadLive();
+    setInterval(loadLive, 10000);
+</script>
+
+</body>
+</html>
